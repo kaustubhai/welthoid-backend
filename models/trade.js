@@ -8,6 +8,10 @@ const details = {
     quantity: {
         type: Number,
         required: true
+    },
+    transaction: {
+        type: Number,
+        required: true
     }
 }
 

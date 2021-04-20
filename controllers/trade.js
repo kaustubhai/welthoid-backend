@@ -5,11 +5,15 @@ const User = require('../models/user')
 const tradeController = {
     buyStock: asyncHandler(async (req, res) => {
         const { stockName, quantity, buyPrice } = req.body
+        const transaction = quantity * buyPrice
         const detail = {
             price: buyPrice,
-            quantity
+            quantity,
+            transaction
         }
         const user = await User.findOne({ googleId: req.user }).populate('currentTrades', 'stockName _id')
+        if (user.coin < transaction)
+            throw new Error("Not enough coin")
         let trade = user.currentTrades.filter((trade) => trade.stockName === stockName)
         if (trade.length === 0) {
             const newTrade = new Trade({ stockName, buy: detail, user: req.user })
@@ -26,60 +30,67 @@ const tradeController = {
                 position.buy.forEach(t => {
                     if (t.price === buyPrice) {
                         t.quantity = t.quantity + quantity
+                        t.transaction = t.transaction + transaction
                     }
                 })
             }
             await position.save()
             res.json(position)
         }
-        user.coin = user.coin - (quantity * buyPrice)
+        user.coin = user.coin - transaction
         await user.save()
     }),
-    // buyStock: asyncHandler(async (req, res) => {
-    //     const { stockName, quantity, buyPrice } = req.body
-    //     const trade = new Trade({ stockName, quantity, buyPrice, user: req.user })
-    //     await trade.save()
-    //     const transaction = quantity * buyPrice * -1
-    //     const user = await User.findOne({ googleId: req.user })
-    //     user.coin = user.coin + transaction
-    //     console.log(transaction)
-    //     user.currentTrades = [...user.currentTrades, trade._id]
-    //     await user.save()
-    //     res.json(trade)
-    // }),
-    // sellStock: asyncHandler(async (req, res) => {
-    //     const { stockName, quantity, buyPrice, sellPrice } = req.body
-    //     const user = await User.findOne({ googleId: req.user }).populate('currentTrades', 'stockName quantity')
-    //     if (user.currentTrades.length === 0)
-    //         return res.status(400).json({ msg: "No position of this stock currently" })
-    //     const stockPosition = user.currentTrades.filter(trade => trade.stockName === stockName)
-    //     if (stockPosition.length === 0)
-    //         return res.status(400).json({ msg: "No position of this stock currently" })
-    //     let quantityInPosition = 0
-    //     stockPosition.forEach(trade => quantityInPosition + trade.quantity)
-    //     if (quantity > quantityInPosition)
-    //         return res.status(400).json({ msg: "Not enough position of this stock currently" })
-    //     let transaction
-    //     stockPosition.forEach(trade => {
-    //         if (stockPosition > 0) {
-    //             if (stockPosition === trade.quantity) {
-    //                 transaction += trade.buyPrice * trade.quantity
-    //             }
-    //         }
-    //     })
-    //     // const trade = new Trade({ stockName, quantity, sellPrice, user: req.user })
-    //     // await trade.save()
-    //     // const transaction = quantity * sellPrice
-    //     // const user = await User.find({ googleId: req.user })
-    //     // user.coin = user.coin + transaction
-    //     // user.currentTrades.filter(t => t._id === trade._id)
-    //     // user.pastTrades = [...user.pastTrades, trade._id]
-    //     // await user.save()
-    //     res.json(user)
-    // }),
+    sellStock: asyncHandler(async (req, res) => {
+        const { stockName, quantity, buyPrice, sellPrice } = req.body
+        const transaction = quantity * sellPrice
+        const user = await User.findOne({ googleId: req.user }).populate('currentTrades', '_id stockName buy')
+        let trade = user.currentTrades.filter(trade => trade.stockName === stockName)
+        if (trade.length === 0)
+            throw new Error("You dont have this stock")
+        const position = await Trade.findById(trade[0]._id)
+        if (position.buy.length === 0)
+            throw new Error("You dont have this stock")
+        let done
+        let presence = true
+        position.buy.forEach(t => {
+            if (buyPrice === t.price && quantity === t.quantity) {
+                done = t
+                presence = false
+                user.coin = user.coin + transaction
+            }
+            else if (buyPrice === t.price && quantity < t.quantity) {
+                presence = false
+                t.quantity = t.quantity - quantity
+                user.coin = user.coin + transaction
+            }
+            else if (buyPrice === t.price && quantity > t.quantity) {
+                throw new Error("Not enough stock")
+            }
+        })
+        if (presence)
+            throw new Error("Enter valid stock price")
+        if (done){
+            position.buy = position.buy.filter(t2 => t2 !== done)
+        }
+        const newTrade = new Trade({
+            stockName,
+            sell: {
+                price: sellPrice,
+                quantity,
+                transaction
+            },
+            user: req.user
+        })
+        await position.save()
+        await newTrade.save()
+        user.pastTrades = [...user.pastTrades, newTrade]
+        user.currentTrades = user.currentTrades.filter(trade => trade.buy.length !== 0)
+        await user.save()
+        res.json(newTrade)
+    }),
     getTrade: asyncHandler(async (req, res) => {
-        const { tradeId } = req.body
-        const trade = await Trade.findById(tradeId)
+        const { id } = req.params
+        const trade = await Trade.findById(id)
         if (!trade)
             throw new Error("No Trade Found")
         res.json(trade)
