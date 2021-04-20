@@ -9,8 +9,8 @@ const errorHandler = require('./middleware/errorHandler')
 
 server.use(cors())
 server.use(express.json())
-// server.use("api/user", require("./controllers/user"))
-server.use("api/trade", require("./router/trade"))
+server.use("/api/user", require("./router/user"))
+server.use("/api/trade", require("./router/trade"))
 server.use(errorHandler.notFound)
 server.use(errorHandler.otherError)
 const PORT = process.env.PORT || 5000

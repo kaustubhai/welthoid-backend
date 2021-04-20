@@ -13,11 +13,11 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Trade'
     }],
-    pastTrade: [{
+    pastTrades: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Trade'
     }]
 })
 
-const user = mongoose.Model('User', userSchema)
+const user = mongoose.model('User', userSchema)
 module.exports = user

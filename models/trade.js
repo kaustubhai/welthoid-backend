@@ -1,32 +1,29 @@
 const mongoose = require('mongoose')
-const tradeSchema = new mongoose.Schema({
-    stockName: {
-        type: 'String',
-        required: true
-    },
-    count: {
-        type: Number,
-        required: true,
-        default: 10000
-    },
-    buyPrice: {
+
+const details = {
+    price: {
         type: Number,
         required: true
     },
     quantity: {
         type: Number,
         required: true
-    },
-    sellPrice: {
-        type: Number,
+    }
+}
+
+const tradeSchema = new mongoose.Schema({
+    stockName: {
+        type: String,
         required: true
     },
+    buy: [details],
+    sell: [details],
     user: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: String,
         ref: 'User',
         required: true
     }
 })
 
-const trade = mongoose.Model('Trade', tradeSchema)
+const trade = mongoose.model('Trade', tradeSchema)
 module.exports = trade
