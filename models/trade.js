@@ -20,6 +20,10 @@ const tradeSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    trade: {
+        type: String,
+        required: true
+    },
     buy: [details],
     sell: [details],
     user: {

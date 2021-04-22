@@ -16,7 +16,7 @@ const tradeController = {
             throw new Error("Not enough coin")
         let trade = user.currentTrades.filter((trade) => trade.stockName === stockName)
         if (trade.length === 0) {
-            const newTrade = new Trade({ stockName, buy: detail, user: req.user })
+            const newTrade = new Trade({ stockName, trade: 'buy', buy: detail, user: req.user })
             await newTrade.save()
             user.currentTrades = [...user.currentTrades, newTrade._id]
             res.json(newTrade)
@@ -69,24 +69,35 @@ const tradeController = {
         })
         if (presence)
             throw new Error("Enter valid stock price")
-        if (done){
+        if (done)
             position.buy = position.buy.filter(t2 => t2 !== done)
+        const details = {
+            price: sellPrice,
+            quantity,
+            transaction
         }
-        const newTrade = new Trade({
-            stockName,
-            sell: {
-                price: sellPrice,
-                quantity,
-                transaction
-            },
-            user: req.user
-        })
         await position.save()
-        await newTrade.save()
-        user.pastTrades = [...user.pastTrades, newTrade]
-        user.currentTrades = user.currentTrades.filter(trade => trade.buy.length !== 0)
+        const sold = await Trade.findOne({ stockName, trade: 'sell' })
+        if(!sold){
+            const newTrade = new Trade({
+                stockName,
+                trade: 'sell',
+                sell: details,
+                user: req.user
+            })
+            await newTrade.save()
+            user.pastTrades = [...user.pastTrades, newTrade]
+            res.json(newTrade)
+        }
+        else {
+            sold.sell = [...sold.sell, details]
+            await sold.save()
+            res.json(sold)
+        }
+        const ifEmpty = await Trade.findOneAndDelete({ buy: [], trade: 'buy' })
+        if (ifEmpty) 
+            user.currentTrades = user.currentTrades.filter(trade => trade._id !== ifEmpty._id)
         await user.save()
-        res.json(newTrade)
     }),
     getTrade: asyncHandler(async (req, res) => {
         const { id } = req.params
