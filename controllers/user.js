@@ -3,7 +3,7 @@ const User = require('../models/user')
 
 const userController = {
     register: asyncHandler(async (req, res) => {
-        const user = await await User.findOne({ googleId: req.user })
+        const user = await User.findOne({ googleId: req.user })
         if (!user) {
             const created = new User({ googleId: req.user })
             await created.save()
