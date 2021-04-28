@@ -45,9 +45,9 @@ const tradeController = {
     sellStock: asyncHandler(async (req, res) => {
         let { stockName, quantity, buyPrice, sellPrice } = req.body
         quantity = parseInt(quantity)
-        buyPrice = parseInt(buyPrice)
-        sellPrice = parseInt(sellPrice)
-        const transaction = quantity * sellPrice
+        buyPrice = parseFloat(buyPrice)
+        sellPrice = parseFloat(sellPrice)
+        const transaction = parseFloat((quantity * sellPrice).toFixed(2))
         const user = await User.findOne({ googleId: req.user }).populate('currentTrades', '_id stockName buy')
         let trade = user.currentTrades.filter(trade => trade.stockName === stockName)
         if (trade.length === 0)
