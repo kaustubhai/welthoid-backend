@@ -4,8 +4,10 @@ const User = require('../models/user')
 
 const tradeController = {
     buyStock: asyncHandler(async (req, res) => {
-        const { stockName, quantity, buyPrice } = req.body
-        const transaction = quantity * buyPrice
+        let { stockName, quantity, buyPrice } = req.body
+        quantity = parseFloat(quantity)
+        buyPrice = parseFloat(buyPrice)
+        const transaction = parseFloat((quantity * buyPrice).toFixed(2))
         const detail = {
             price: buyPrice,
             quantity,
@@ -41,8 +43,11 @@ const tradeController = {
         await user.save()
     }),
     sellStock: asyncHandler(async (req, res) => {
-        const { stockName, quantity, buyPrice, sellPrice } = req.body
-        const transaction = quantity * sellPrice
+        let { stockName, quantity, buyPrice, sellPrice } = req.body
+        quantity = parseInt(quantity)
+        buyPrice = parseFloat(buyPrice)
+        sellPrice = parseFloat(sellPrice)
+        const transaction = parseFloat((quantity * sellPrice).toFixed(2))
         const user = await User.findOne({ googleId: req.user }).populate('currentTrades', '_id stockName buy')
         let trade = user.currentTrades.filter(trade => trade.stockName === stockName)
         if (trade.length === 0)
