@@ -11,6 +11,7 @@ server.use(cors())
 server.use(express.json())
 server.use("/api/user", require("./router/user"))
 server.use("/api/trade", require("./router/trade"))
+server.use("/api/news", require("./router/news"))
 server.use(errorHandler.notFound)
 server.use(errorHandler.otherError)
 const PORT = process.env.PORT || 5000
