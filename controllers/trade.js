@@ -81,6 +81,7 @@ const tradeController = {
             quantity,
             transaction
         }
+        const change = (sellPrice - buyPrice) * quantity
         await position.save()
         const sold = await Trade.findOne({ stockName, trade: 'sell' })
         if(!sold){
@@ -92,12 +93,12 @@ const tradeController = {
             })
             await newTrade.save()
             user.pastTrades = [...user.pastTrades, newTrade]
-            res.json(newTrade)
+            res.json({newTrade, change})
         }
         else {
             sold.sell = [...sold.sell, details]
             await sold.save()
-            res.json(sold)
+            res.json({sold, change})
         }
         const ifEmpty = await Trade.findOneAndDelete({ buy: [], trade: 'buy' })
         if (ifEmpty) 
